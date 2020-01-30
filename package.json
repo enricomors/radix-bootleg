@@ -1,0 +1,22 @@
+{
+  "name": "radix-bootleg",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/enricomors/radix-bootleg.git"
+  },
+  "author": "Enrico Morselli",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/enricomors/radix-bootleg/issues"
+  },
+  "homepage": "https://github.com/enricomors/radix-bootleg#readme",
+  "dependencies": {
+    "radixdlt": "^2.0.0-beta.1"
+  }
+}
