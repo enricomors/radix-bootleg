@@ -4,7 +4,8 @@
   "description": "",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "serve": "node src/app.js"
   },
   "repository": {
     "type": "git",
@@ -17,6 +18,8 @@
   },
   "homepage": "https://github.com/enricomors/radix-bootleg#readme",
   "dependencies": {
+    "express": "^4.17.1",
+    "mongoose": "^5.8.10",
     "radixdlt": "^2.0.0-beta.1"
   }
 }
