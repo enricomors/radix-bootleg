@@ -8,12 +8,10 @@ const model = db.Bootleg
 const connect = db.connectDb
 
 const radixUniverse = radixdlt.radixUniverse
-const LOCALHOST_SINGLENODE = radixdlt.RadixUniverse.LOCALHOST_SINGLENODE
-const RadixIdentityManager = radixdlt.RadixIdentityManager
 
-radixUniverse.bootstrap(LOCALHOST_SINGLENODE)
+radixUniverse.bootstrap(radixdlt.RadixUniverse.LOCALHOST_SINGLENODE)
 
-const identityManager = new RadixIdentityManager()
+const identityManager = new radixdlt.RadixIdentityManager()
 
 this.serverIdentity = identityManager.generateSimpleIdentity()
 
@@ -28,7 +26,53 @@ app.get('/', (req, res) => { res.send('Server address is ', serverAccount.getAdd
 
 // send bootleg
 app.post('/send-bootleg', (req, res) => {
-    
+
+    const symbol = req.body.symbol
+    const title = req.body.title
+    const artist = req.body.artist
+    const descritpion = req.body.descritpion
+    const contentUrl = req.body.contentUrl
+
+    const amount = 100
+    const granularity = 1
+    const iconUrl = '';
+
+    const uri = new radixdlt.RRI(this.serverIdentity.address, symbol)
+
+    new radixdlt.RadixTransactionBuilder().createTokenSingleIssuance(
+        serverAccount,
+        title,
+        symbol,
+        descritpion,
+        granularity,
+        amount,
+        iconUrl
+    ).signAndSubmit(this.serverIdentity)
+    .subscribe({
+        next: status => { console.log(status) },
+        complete: async () => {
+            const bootleg = new model({
+                tokenUri: uri.toString(),
+                title,
+                artist,
+                descritpion,
+                contentUrl
+            })
+            await bootleg.save()
+            console.log('bootleg added to database')
+
+            // è necessario avere un riferimento all'account che ha inviato il bootleg
+
+            /*
+            radixdlt.RadixTransactionBuilder.createTransferAtom(
+                serverAccount, bootleggerAccount, tokenUri, amount
+            )*/
+            res.send(uri)
+        },
+        error: error => {
+            console.log(error)
+        }
+    })
 })
 
 connect().then(() => {
