@@ -22,20 +22,27 @@ console.log('My address: ', serverAccount.getAddress())
 /** REQUESTS HANDLING */
 
 // main page
-app.get('/', (req, res) => { res.send('Server address is ', serverAccount.getAddress()) })
+app.get('/', (req, res) => { 
+    res.send('Server address is ', serverAccount.getAddress()) 
+})
 
 // send bootleg
 app.post('/send-bootleg', (req, res) => {
 
+    // bootleg information
     const symbol = req.body.symbol
     const title = req.body.title
     const artist = req.body.artist
     const descritpion = req.body.descritpion
     const contentUrl = req.body.contentUrl
 
+    // sender address
+    const sender = req.body.sender
+
+    // token information
     const amount = 100
     const granularity = 1
-    const iconUrl = '';
+    const iconUrl = req.body.iconUrl;
 
     const uri = new radixdlt.RRI(this.serverIdentity.address, symbol)
 
@@ -59,18 +66,23 @@ app.post('/send-bootleg', (req, res) => {
                 contentUrl
             })
             await bootleg.save()
-            console.log('bootleg added to database')
+            console.log('Bootleg added to database')
 
-            // è necessario avere un riferimento all'account che ha inviato il bootleg
+            const bootleggerAccount = radixdlt.RadixAccount.fromAddress(sender)
 
-            /*
+            /** Transfer tokens to the bootlegger */
             radixdlt.RadixTransactionBuilder.createTransferAtom(
                 serverAccount, bootleggerAccount, tokenUri, amount
-            )*/
-            res.send(uri)
+            ).signAndSubmit(this.serverIdentity)
+            .subscribe({
+                complete: () => {
+                    console.log('Tokens sent to bootlegger')
+                    res.send(uri)
+                }
+            })
         },
-        error: error => {
-            console.log(error)
+        error: err => {
+            console.log(err, 'Error during token creation')
         }
     })
 })
