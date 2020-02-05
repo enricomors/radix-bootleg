@@ -42,7 +42,7 @@ app.post('/send-bootleg', (req, res) => {
     // token information
     const amount = 100
     const granularity = 1
-    const iconUrl = req.body.iconUrl;
+    const iconUrl = '';
 
     const uri = new radixdlt.RRI(serverIdentity.address, symbol)
 

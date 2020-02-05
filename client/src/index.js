@@ -15,10 +15,8 @@ const clientAccount = clientIdentity.account
 clientAccount.openNodeConnection()
 console.log('My address: ', clientAccount.getAddress())
 
-app.use('/public', express.static(path.join(__dirname, 'public')))
-
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'))
+    res.sendFile(path.join(__dirname, '/public/index.html'))
 })
 
 app.listen(port, () => {
