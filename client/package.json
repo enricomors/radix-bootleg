@@ -9,6 +9,7 @@
   "author": "Enrico Morselli",
   "license": "MIT",
   "dependencies": {
+    "express": "^4.17.1",
     "radixdlt": "^2.0.0-beta.1"
   }
 }

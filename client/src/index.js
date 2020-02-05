@@ -1,4 +1,8 @@
 const radixdlt = require('radixdlt')
+const express = require('express')
+const app = express()
+const path = require('path')
+const port = 8000
 
 const radixUniverse = radixdlt.radixUniverse
 
@@ -10,4 +14,14 @@ const clientIdentity = identityManager.generateSimpleIdentity()
 const clientAccount = clientIdentity.account
 clientAccount.openNodeConnection()
 console.log('My address: ', clientAccount.getAddress())
+
+app.use('/public', express.static(path.join(__dirname, 'public')))
+
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'))
+})
+
+app.listen(port, () => {
+    console.log(`Example client listening on port ${port}!`)
+})
 
