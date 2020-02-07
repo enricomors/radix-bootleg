@@ -32,12 +32,12 @@ app.post('/send-bootleg', (req, res) => {
     // bootleg information
     const symbol = req.body.symbol
     const title = req.body.title
-    const artist = req.body.artist
+    const artist = req.body.artist // artist address
     const descritpion = req.body.descritpion
     const contentUrl = req.body.contentUrl
 
-    // sender address
-    const sender = req.body.sender
+    // bootlegger address
+    const bootlegger = req.body.sender
 
     // token information
     const amount = 100
@@ -63,12 +63,14 @@ app.post('/send-bootleg', (req, res) => {
                 title,
                 artist,
                 descritpion,
-                contentUrl
+                contentUrl,
+                bootlegger
             })
             await bootleg.save()
             console.log('Bootleg added to database')
 
-            const bootleggerAccount = radixdlt.RadixAccount.fromAddress(sender)
+            // get bootlegger account from address
+            const bootleggerAccount = radixdlt.RadixAccount.fromAddress(bootlegger)
 
             /** Transfer tokens to the bootlegger */
             radixdlt.RadixTransactionBuilder.createTransferAtom(
