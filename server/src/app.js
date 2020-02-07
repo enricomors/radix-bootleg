@@ -1,8 +1,10 @@
 const express = require('express')
 const app = express()
 const port = 3000
+
 const radixdlt = require('radixdlt')
 const db = require('./models/index')
+const fs = require('fs-extra')
 
 const model = db.Bootleg
 const connect = db.connectDb
@@ -12,12 +14,39 @@ const radixUniverse = radixdlt.radixUniverse
 radixUniverse.bootstrap(radixdlt.RadixUniverse.LOCALHOST_SINGLENODE)
 
 const identityManager = new radixdlt.RadixIdentityManager()
+let serverIdentity
 
-const serverIdentity = identityManager.generateSimpleIdentity()
+// generate server identity and store it to a file
+const RadixKeyStore = radixdlt.RadixKeyStore
+const password = "SuperSecretPassword"
+const keystorePath = 'keystore.json'
 
-const serverAccount = serverIdentity.account
-serverAccount.openNodeConnection()
-console.log('My address: ', serverAccount.getAddress())
+/** Store and recover account */
+async function loadIdentity() {
+    if (fs.existsSync(keystorePath)) {
+        // load account
+        const contents = await fs.readJSON(keystorePath)
+        const address = await RadixKeyStore.decryptKey(contents, password)
+        const serverIdentity = identityManager.addSimpleIdentity(address)
+        await serverIdentity.account.openNodeConnection()
+
+        console.log('Loaded identity')
+        return serverIdentity
+    } else {
+        const serverIdentity = identityManager.generateSimpleIdentity()
+        await serverIdentity.account.openNodeConnection()
+        const contents = await RadixKeyStore.encryptKey(serverIdentity.address, password)
+        await fs.writeJSON(keystorePath, contents)
+
+        console.log('Generated new identity')
+        return serverIdentity
+    }
+}
+
+/** Handle buying a bootleg */
+function subscribeForPurchases() {
+    console.log('Subscribed for purchases')
+}
 
 /** REQUESTS HANDLING */
 
@@ -89,6 +118,10 @@ app.post('/send-bootleg', (req, res) => {
     })
 })
 
-connect().then(() => {
-    app.listen(port, () => console.log(`Example app listening on port ${port}!`))
+connect()
+.then(() => {
+    return loadIdentity()
+}).then(_identity => {
+    serverIdentity = _identity
+    subscribeForPurchases()
 })
