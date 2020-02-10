@@ -11,7 +11,7 @@ const connect = db.connectDb
 
 const radixUniverse = radixdlt.radixUniverse
 
-radixUniverse.bootstrap(radixdlt.RadixUniverse.LOCALHOST_SINGLENODE)
+radixUniverse.bootstrap(radixdlt.RadixUniverse)
 
 const identityManager = new radixdlt.RadixIdentityManager()
 let serverIdentity
@@ -22,6 +22,7 @@ const password = "SuperSecretPassword"
 const keystorePath = 'keystore.json'
 
 /** Store and recover account */
+/*
 async function loadIdentity() {
     if (fs.existsSync(keystorePath)) {
         // load account
@@ -41,6 +42,14 @@ async function loadIdentity() {
         console.log('Generated new identity')
         return serverIdentity
     }
+}*/
+
+async function loadIdentities() {
+    
+}
+
+async function generateIdentities() {
+
 }
 
 /** Handle buying a bootleg */
