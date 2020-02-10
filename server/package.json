@@ -1,26 +1,31 @@
 {
-  "name": "radix-bootleg",
+  "name": "server",
   "version": "1.0.0",
-  "description": "Server for Radix Bootleg application",
-  "main": "app.js",
+  "description": "A minimal boilerplate for typescript and express",
+  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "serve": "node src/app.js"
+    "start": "nodemon",
+    "build": "webpack --mode=production --config webpack.config.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/enricomors/radix-bootleg.git"
-  },
-  "author": "Enrico Morselli",
   "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/enricomors/radix-bootleg/issues"
-  },
-  "homepage": "https://github.com/enricomors/radix-bootleg#readme",
   "dependencies": {
-    "express": "^4.17.1",
+    "@types/fs-extra": "^8.0.1",
+    "@types/mongoose": "^5.7.0",
+    "express": "^4.16.3",
     "fs-extra": "^8.1.0",
-    "mongoose": "^5.8.10",
+    "mongoose": "^5.8.11",
     "radixdlt": "^2.0.0-beta.1"
+  },
+  "devDependencies": {
+    "@types/express": "^4.16.0",
+    "@types/node": "^10.3.2",
+    "@types/webpack": "^4.4.0",
+    "prettier": "1.13.5",
+    "ts-loader": "^4.4.1",
+    "ts-node": "^6.1.1",
+    "typescript": "^2.9.1",
+    "webpack": "^4.12.0",
+    "webpack-cli": "^3.0.4"
   }
 }
