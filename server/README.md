@@ -1,4 +1,4 @@
-This simple server is based on (typescript-express-boilerplate)[https://github.com/texzhichen/typescript-express-boilerplate]
+This simple server is based on [typescript-express-boilerplate](https://github.com/texzhichen/typescript-express-boilerplate)
 
 ## Introduction
 
