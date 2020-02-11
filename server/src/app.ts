@@ -41,24 +41,7 @@ connectDb()
 .catch((err: Error) => {
   console.log('Error connecting to database ', err);
 })
-/*
-.then(() => {
-  mockBootlegCreation().catch((err) => {
-    console.log('Error mocking bootleg creation', err);
-  })
-}).then(() => {
-  // start listening on port 3001
-  app.listen(port, (err: Error) => {
-    if (err) {
-      console.error('Error starting server', err)
-    } else {
-      console.log('NODE_ENV =', process.env.NODE_ENV)
-    }
-  });
-}).catch((err) => {
-  console.error('Error launching app', err);
-})
-*/
+
 async function loadIdentities() {
 
   /* Can use this only on client side
@@ -116,7 +99,7 @@ async function mockBootlegCreation() {
 
   const amount = 20
   const granularity = 1
-  const iconUrl = ''
+  const iconUrl = 'https://i.pinimg.com/originals/3d/74/f7/3d74f7ad35752ccce93081980bc3ac55.jpg'
 
   const uri = new RRI(artistIdentity.address, symbol)
 
