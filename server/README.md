@@ -1,9 +1,5 @@
-This simple server is based on [typescript-express-boilerplate](https://github.com/texzhichen/typescript-express-boilerplate)
+This simple server is based on [typescript-express-boilerplate](https://github.com/texzhichen/typescript-express-boilerplate), a boilerplate that uses TypeScript 2.9, Express 4, and Webpack 4.
 
-## Introduction
-
-- This boilerplate uses TypeScript 2.9, Express 4, and Webpack 4
-  to print a "hello world" on the port 3001.
 - For development, it uses `nodemon` to monitor source file changes.
 - For production, it uses `webpack` to bundle source files.
 
@@ -13,7 +9,4 @@ This simple server is based on [typescript-express-boilerplate](https://github.c
 - `npm install`
 - `npm start` for development; `npm run build` for production
 
-## Rationale
-
-- Minimal: Only include necessary packages and settings to print a "hello world".
-- Hot reload: Use `nodemon` instead of `webpack` HMR since `nodemon` is much easier and more flexible.
+The command `npm start` will start a local server running on port 3001.

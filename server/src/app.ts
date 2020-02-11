@@ -16,30 +16,28 @@ let bootleggerIdentity: RadixIdentity
 
 radixUniverse.bootstrap(RadixUniverse.BETANET_EMULATOR)
 
-connectDb()
-.then(() => {
-  loadIdentities()
-  .then(() => {
-    mockBootlegCreation()
-    .then(() => {
-      app.listen(port, (err: Error) => {
-        if (err) {
-          console.error('Error starting server ', err);          
-        } else {
-          console.log('NODE_ENV = ', process.env.NODE_ENV)
-        }
-      })
+connectDb().then(() => {
+  loadIdentities().then(() => {
+    app.listen(port, (err: Error) => {
+      if (err) {
+        console.error('Error starting server ', err);          
+      } else {
+        console.log('NODE_ENV = ', process.env.NODE_ENV)
+      }
     })
-    .catch((err: Error) => {
-      console.log('Error mocking bootleg sending ', err);
-    })
-  })
-  .catch((err: Error) => {
+  }).catch((err: Error) => {
     console.log('Error loading/creating identities ', err)
   })
-})
-.catch((err: Error) => {
+}).catch((err: Error) => {
   console.log('Error connecting to database ', err);
+})
+
+app.get('/bootlegs', async (req, res) => {
+
+})
+
+app.post('/save-bootleg', async (req, res) => {
+  
 })
 
 async function loadIdentities() {
