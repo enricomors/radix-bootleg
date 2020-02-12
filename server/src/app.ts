@@ -33,11 +33,40 @@ connectDb().then(() => {
 })
 
 app.get('/bootlegs', async (req, res) => {
-
+  models.Bootleg.find({}, '-contentUrl', (err, bootlegs) => {
+    if (err) {
+      res.status(400).send(err)
+      return
+    }
+    res.send(bootlegs)
+  })
 })
 
 app.post('/save-bootleg', async (req, res) => {
-  
+
+  const uri = req.body.uri
+  const title = req.body.title
+  const artist = req.body.artist
+  const description = req.body.description
+  const contentUrl = req.body.contentUrl
+  const bootlegger = req.body.bootlegger
+
+  try {
+    const bootleg = new models.Bootleg({
+      tokenUri: uri.toString(),
+      title,
+      artist,
+      description,
+      contentUrl,
+      bootlegger
+    })
+    await bootleg.save()
+    res.send(uri)
+    console.log('Saved to db');
+  } catch (e) {
+    console.log(e);
+    res.status(400).send(e.message)
+  }
 })
 
 async function loadIdentities() {
