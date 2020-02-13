@@ -44,7 +44,7 @@ app.get('/bootlegs', async (req, res) => {
 
 app.post('/save-bootleg', async (req, res) => {
 
-  const uri = req.body.uri
+  const tokenUri = req.body.uri
   const title = req.body.title
   const artist = req.body.artist
   const description = req.body.description
@@ -53,7 +53,7 @@ app.post('/save-bootleg', async (req, res) => {
 
   try {
     const bootleg = new models.Bootleg({
-      tokenUri: uri.toString(),
+      tokenUri,
       title,
       artist,
       description,
@@ -61,7 +61,7 @@ app.post('/save-bootleg', async (req, res) => {
       bootlegger
     })
     await bootleg.save()
-    res.send(uri)
+    res.send(tokenUri)
     console.log('Saved to db');
   } catch (e) {
     console.log(e);
