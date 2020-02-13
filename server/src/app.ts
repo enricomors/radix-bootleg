@@ -2,9 +2,13 @@ import express from 'express';
 import { radixUniverse, RadixUniverse, RadixIdentity, RRI, RadixIdentityManager, RadixKeyStore, RadixTransactionBuilder } from 'radixdlt';
 import models, { connectDb } from './models'
 import fs from 'fs-extra';
+import cors from 'cors';
+import bodyParser from 'body-parser';
 
 const app: express.Application = express()
 const port: number = Number(process.env.PORT) || 3001
+app.use(cors())
+app.use(bodyParser.json())
 
 const identityManager = new RadixIdentityManager()
 const keyStorePsw = 'SuperSecretPassword'
@@ -113,65 +117,4 @@ async function generateIdentites() {
   
   // localStorage.setItem('artist', JSON.stringify(bootleggerKeyStore))
   console.log('Bootlegger identity created')
-}
-
-async function mockBootlegCreation() {
-  const symbol = 'PTV'
-  const title = 'Pierce The Veil - Live at Reading Full (2015)'
-  const description = 'The full 27 minute set'
-  const contentUrl = 'https://www.youtube.com/watch?v=gHqYX_NWhOk&t=847s'
-
-  const artist = artistIdentity.address.toString
-  const bootlegger = bootleggerIdentity.address.toString
-
-  const amount = 20
-  const granularity = 1
-  const iconUrl = 'https://i.pinimg.com/originals/3d/74/f7/3d74f7ad35752ccce93081980bc3ac55.jpg'
-
-  const uri = new RRI(artistIdentity.address, symbol)
-
-  new RadixTransactionBuilder().createTokenSingleIssuance(
-    artistIdentity.account,
-    title,
-    symbol,
-    description,
-    granularity,
-    amount,
-    iconUrl
-  ).signAndSubmit(artistIdentity)
-  .subscribe({
-    next: status => { console.log(status) },
-    complete: async () => {
-      // save bootleg to database
-      const bootleg = new models.Bootleg({
-        tokenUri: uri.toString(),
-        title,
-        artist,
-        description,
-        contentUrl,
-        bootlegger
-      })
-      await bootleg.save()
-      console.log('Bootleg added to database')
-      
-      // sends token to bootlegger
-      RadixTransactionBuilder.createTransferAtom(
-        artistIdentity.account,
-        bootleggerIdentity.account,
-        uri.toString(),
-        amount
-      ).signAndSubmit(artistIdentity)
-      .subscribe({
-        complete: () => {
-          console.log('Tokens sent to bootlegger')
-        },
-        error: err => {
-          console.error('Error sending tokens ', err);
-        }
-      })
-    },
-    error: err => {
-      console.error('Error during token creation ', err);
-    }
-  })
 }

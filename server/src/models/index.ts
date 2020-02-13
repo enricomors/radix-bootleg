@@ -1,12 +1,13 @@
 import mongoose from 'mongoose'
-import * as dotenv from 'dotenv'
+// import * as dotenv from 'dotenv'
 import Bootleg from './bootleg'
 
+/*
 const path = `${__dirname}/../../.env`
-
 dotenv.config({ path: path})
+*/
 
-const dbUrl = `mongodb+srv://enrico:<${process.env.DB_PASSWORD}>@cluster0-modkb.gcp.mongodb.net/test?retryWrites=true&w=majority`
+const dbUrl = process.env.DATABASE_URL ? process.env.DATABASE_URL : 'mongodb://localhost:27017/radix-bootleg'
 
 const connectDb = () => {
     console.log(dbUrl)
