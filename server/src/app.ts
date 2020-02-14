@@ -51,6 +51,7 @@ app.post('/save-bootleg', async (req, res) => {
   const tokenUri = req.body.uri
   const title = req.body.title
   const artist = req.body.artist
+  const price = req.body.price
   const description = req.body.description
   const contentUrl = req.body.contentUrl
   const bootlegger = req.body.bootlegger
@@ -60,6 +61,7 @@ app.post('/save-bootleg', async (req, res) => {
       tokenUri,
       title,
       artist,
+      price,
       description,
       contentUrl,
       bootlegger
