@@ -1,5 +1,5 @@
 import express from 'express';
-import { radixUniverse, RadixUniverse, RadixIdentity, RRI, RadixIdentityManager, RadixKeyStore, RadixTransactionBuilder } from 'radixdlt';
+import { radixUniverse, RadixUniverse, RadixIdentity, RRI, RadixIdentityManager, RadixKeyStore, RadixTransactionBuilder, RadixAccount } from 'radixdlt';
 import models, { connectDb } from './models'
 import fs from 'fs-extra';
 import cors from 'cors';
@@ -11,17 +11,16 @@ app.use(cors())
 app.use(bodyParser.json())
 
 const identityManager = new RadixIdentityManager()
-const keyStorePsw = 'SuperSecretPassword'
-const artistKeyStorePath = 'artist-keystore.json'
-const bootleggerKeyStorePath = 'bootlegger-keystore.json'
+const keyStorePsw = 'ServerPassword'
+const KeyStorePath = 'server-keystore.json'
 
-let artistIdentity: RadixIdentity
-let bootleggerIdentity: RadixIdentity
+let serverIdentity: RadixIdentity
 
 radixUniverse.bootstrap(RadixUniverse.BETANET_EMULATOR)
 
 connectDb().then(() => {
-  loadIdentities().then(() => {
+  loadIdentity().then(() => {
+    subscribeForPurchases()
     app.listen(port, (err: Error) => {
       if (err) {
         console.error('Error starting server ', err);          
@@ -30,7 +29,7 @@ connectDb().then(() => {
       }
     })
   }).catch((err: Error) => {
-    console.log('Error loading/creating identities ', err)
+    console.log('Error loading/creating identity ', err)
   })
 }).catch((err: Error) => {
   console.log('Error connecting to database ', err);
@@ -75,48 +74,48 @@ app.post('/save-bootleg', async (req, res) => {
   }
 })
 
-async function loadIdentities() {
+app.get('/request-address', (req, res) => {
+  const serverAddress = serverIdentity.address
+  res.send({ address: serverAddress.toString() })
+})
+
+app.post('/send-recipients', (req, res) => {
+  
+})
+
+async function loadIdentity() {
 
   /* Can use this only on client side
   const artistKeyStore = localStorage.getItem('artist')
   const bootleggerKeyStore = localStorage.getItem('bootlegger')
   */
-  if (fs.existsSync(artistKeyStorePath) && fs.existsSync(bootleggerKeyStorePath)) {
-    // artist
-    const artistKeyStore = await fs.readJSON(artistKeyStorePath)
-    const artistAddress = await RadixKeyStore.decryptKey(artistKeyStore, keyStorePsw)
-    artistIdentity = identityManager.addSimpleIdentity(artistAddress)
-    await artistIdentity.account.openNodeConnection()
-    console.log('Artist identity loaded');
+  if (fs.existsSync(KeyStorePath)) {
+    const serverKeystore = await fs.readJSON(KeyStorePath)
+    const serverAddress = await RadixKeyStore.decryptKey(serverKeystore, keyStorePsw)
+    serverIdentity = identityManager.addSimpleIdentity(serverAddress)
+    await serverIdentity.account.openNodeConnection()
 
-    // bootlegger
-    const bootleggerKeyStore = await fs.readJSON(bootleggerKeyStorePath)
-    const bootleggerAddress = await RadixKeyStore.decryptKey(bootleggerKeyStore, keyStorePsw)
-    bootleggerIdentity = identityManager.addSimpleIdentity(bootleggerAddress)
-    await bootleggerIdentity.account.openNodeConnection()
-    console.log('Bootlegger identity loaded');
-
+    console.log('Server identity loaded');
   } else {
-    generateIdentites().catch(error => {
+    generateIdentity().catch(error => {
       console.error('Error generating identities ', error)
     })
   }
 }
 
-async function generateIdentites() {
+async function generateIdentity() {
   // artist
-  artistIdentity = identityManager.generateSimpleIdentity()
-  await artistIdentity.account.openNodeConnection()
-  const artistKeyStore = await RadixKeyStore.encryptKey(artistIdentity.address, keyStorePsw)
-  await fs.writeJSON(artistKeyStorePath, artistKeyStore)
+  serverIdentity = identityManager.generateSimpleIdentity()
+  await serverIdentity.account.openNodeConnection()
+  const serverKeystore = await RadixKeyStore.encryptKey(serverIdentity.address, keyStorePsw)
+  await fs.writeJSON(KeyStorePath, serverKeystore)
   console.log('Artist identity created')
+}
 
-  // bootlegger
-  bootleggerIdentity = identityManager.generateSimpleIdentity()
-  await bootleggerIdentity.account.openNodeConnection()
-  const bootleggerKeyStore = await RadixKeyStore.encryptKey(bootleggerIdentity.address, keyStorePsw)
-  await fs.writeJSON(bootleggerKeyStorePath, bootleggerKeyStore)
-  
-  // localStorage.setItem('artist', JSON.stringify(bootleggerKeyStore))
-  console.log('Bootlegger identity created')
+function subscribeForPurchases() {
+  const bltToken = 
+
+  serverIdentity.account.transferSystem.getTokenUnitsBalanceUpdates().subscribe(balance => {
+
+  })
 }

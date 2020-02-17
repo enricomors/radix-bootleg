@@ -20,3 +20,4 @@ build/
 # radix keystore
 artist-keystore.json
 bootlegger-keystore.json
+server-keystore.json
