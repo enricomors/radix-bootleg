@@ -1,12 +1,23 @@
 import express from 'express';
-import { radixUniverse, RadixUniverse, RadixIdentity, RRI, RadixIdentityManager, RadixKeyStore, RadixTransactionBuilder, RadixAccount } from 'radixdlt';
+import { radixUniverse, 
+  RadixUniverse, 
+  RadixIdentity, 
+  RRI, 
+  RadixIdentityManager,
+  RadixKeyStore, 
+  RadixTransactionBuilder, 
+  RadixAccount, 
+  RadixLogger} from 'radixdlt';
 import models, { connectDb } from './models'
 import fs from 'fs-extra';
 import cors from 'cors';
 import bodyParser from 'body-parser';
+import { stat } from 'fs';
+import { error } from 'util';
 
 const app: express.Application = express()
 const port: number = Number(process.env.PORT) || 3001
+
 app.use(cors())
 app.use(bodyParser.json())
 
@@ -17,10 +28,11 @@ const KeyStorePath = 'server-keystore.json'
 let serverIdentity: RadixIdentity
 
 radixUniverse.bootstrap(RadixUniverse.BETANET_EMULATOR)
+RadixLogger.setLevel('DEBUG')
 
 connectDb().then(() => {
   loadIdentity().then(() => {
-    subscribeForPurchases()
+    subscribeForAtoms()
     app.listen(port, (err: Error) => {
       if (err) {
         console.error('Error starting server ', err);          
@@ -44,6 +56,13 @@ app.get('/bootlegs', async (req, res) => {
     res.send(bootlegs)
   })
 })
+
+function subscribeForAtoms() {
+  serverIdentity.account.transferSystem.transactionSubject.subscribe(update => {
+    console.log('update ' + update)
+    
+  })
+}
 
 app.post('/save-bootleg', async (req, res) => {
 
@@ -80,8 +99,57 @@ app.get('/request-address', (req, res) => {
 })
 
 app.post('/send-recipients', (req, res) => {
-  
+  const artist: string = req.body.artist
+  const bootlegger: string = req.body.bootlegger
+  const franchisors: [string] = req.body.franchisors
+  const newFranchisor: string = req.body.newFranchisor
+  const bootlegPrice: number = req.body.price
+
+  sendPayment(franchisors, newFranchisor, artist, bootlegger, bootlegPrice)
+    .then(() => {
+      updateFranchisors(franchisors, newFranchisor)
+      res.status(200).send()
+    })
+    .catch(error => {
+      console.error(error)
+      res.status(400).send({ message: error.message})
+    })
 })
+
+async function sendPayment(franchisors: [string], newFranchisor: string, artist: string, bootlegger: string, price: number) {
+  
+  franchisors.push(bootlegger)
+  franchisors.push(artist)
+
+  const dividedPrice = price/franchisors.length
+
+  for (let i = 0; i < franchisors.length; i++) {
+    const franchisor = franchisors[i]
+    
+    const franchisorAccount = RadixAccount.fromAddress(franchisor)
+    const tokenUri = `/${newFranchisor}/BTL`
+    
+    await pay(franchisorAccount, tokenUri, dividedPrice)
+  }
+}
+
+async function pay(franchisorAccount: RadixAccount, tokenUri: string, amount: number): Promise<string> {
+  const transaction = RadixTransactionBuilder
+    .createTransferAtom(
+      serverIdentity.account,
+      franchisorAccount,
+      tokenUri,
+      amount
+    ).signAndSubmit(serverIdentity)
+
+    return transaction.toPromise()
+}
+
+function updateFranchisors(franchisors: [string], newFranchisor: string) {
+  // models.Bootleg.updateOne()
+  // console.log(franchisors)
+  console.log('Updated franchisors list on database');
+}
 
 async function loadIdentity() {
 
@@ -109,13 +177,5 @@ async function generateIdentity() {
   await serverIdentity.account.openNodeConnection()
   const serverKeystore = await RadixKeyStore.encryptKey(serverIdentity.address, keyStorePsw)
   await fs.writeJSON(KeyStorePath, serverKeystore)
-  console.log('Artist identity created')
-}
-
-function subscribeForPurchases() {
-  const bltToken = 
-
-  serverIdentity.account.transferSystem.getTokenUnitsBalanceUpdates().subscribe(balance => {
-
-  })
+  console.log('Server identity created')
 }
