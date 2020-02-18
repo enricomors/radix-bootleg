@@ -6,8 +6,7 @@ import { radixUniverse,
   RadixIdentityManager,
   RadixKeyStore, 
   RadixTransactionBuilder, 
-  RadixAccount, 
-  RadixLogger} from 'radixdlt';
+  RadixAccount } from 'radixdlt';
 import models, { connectDb } from './models'
 import fs from 'fs-extra';
 import cors from 'cors';
@@ -28,11 +27,9 @@ const KeyStorePath = 'server-keystore.json'
 let serverIdentity: RadixIdentity
 
 radixUniverse.bootstrap(RadixUniverse.BETANET_EMULATOR)
-RadixLogger.setLevel('DEBUG')
 
 connectDb().then(() => {
   loadIdentity().then(() => {
-    subscribeForAtoms()
     app.listen(port, (err: Error) => {
       if (err) {
         console.error('Error starting server ', err);          
@@ -56,13 +53,6 @@ app.get('/bootlegs', async (req, res) => {
     res.send(bootlegs)
   })
 })
-
-function subscribeForAtoms() {
-  serverIdentity.account.transferSystem.transactionSubject.subscribe(update => {
-    console.log('update ' + update)
-    
-  })
-}
 
 app.post('/save-bootleg', async (req, res) => {
 
@@ -99,6 +89,7 @@ app.get('/request-address', (req, res) => {
 })
 
 app.post('/send-recipients', (req, res) => {
+  const tokenUri: string = req.body.tokenUri
   const artist: string = req.body.artist
   const bootlegger: string = req.body.bootlegger
   const franchisors: [string] = req.body.franchisors
@@ -107,7 +98,7 @@ app.post('/send-recipients', (req, res) => {
 
   sendPayment(franchisors, newFranchisor, artist, bootlegger, bootlegPrice)
     .then(() => {
-      updateFranchisors(franchisors, newFranchisor)
+      updateFranchisors(tokenUri, franchisors, newFranchisor, bootlegger)
       res.status(200).send()
     })
     .catch(error => {
@@ -121,22 +112,24 @@ async function sendPayment(franchisors: [string], newFranchisor: string, artist:
   franchisors.push(bootlegger)
   franchisors.push(artist)
 
-  const dividedPrice = price/franchisors.length
-
+  const dividedPrice = (price/franchisors.length).toString()
+  console.log(dividedPrice);
+  
   for (let i = 0; i < franchisors.length; i++) {
     const franchisor = franchisors[i]
     
     const franchisorAccount = RadixAccount.fromAddress(franchisor)
     const tokenUri = `/${newFranchisor}/BTL`
-    
+
     await pay(franchisorAccount, tokenUri, dividedPrice)
   }
 }
 
-async function pay(franchisorAccount: RadixAccount, tokenUri: string, amount: number): Promise<string> {
+async function pay(franchisorAccount: RadixAccount, tokenUri: string, amount: string): Promise<string> {
+  const serverAccount = serverIdentity.account
   const transaction = RadixTransactionBuilder
     .createTransferAtom(
-      serverIdentity.account,
+      serverAccount,
       franchisorAccount,
       tokenUri,
       amount
@@ -145,10 +138,40 @@ async function pay(franchisorAccount: RadixAccount, tokenUri: string, amount: nu
     return transaction.toPromise()
 }
 
-function updateFranchisors(franchisors: [string], newFranchisor: string) {
-  // models.Bootleg.updateOne()
+async function updateFranchisors(_tokenUri: string, franchisors: [string], newFranchisor: string, bootlegger: string) {
+  if (franchisors.length > 0) {
+    await requestToken(_tokenUri, newFranchisor, franchisors[franchisors.length - 1])
+  } else {
+    await requestToken(_tokenUri, newFranchisor, bootlegger)
+  }
+  
+  await models.Bootleg.updateOne(
+    { tokenUri: _tokenUri },
+    { $push: { franchisors: newFranchisor }}
+  )
   // console.log(franchisors)
   console.log('Updated franchisors list on database');
+}
+
+function requestToken(tokenUri: string, newFranchisor: string, owner: string): Promise<string> {
+  console.log('Creating paylod for token request');
+  
+  const ownerAccount = RadixAccount.fromAddress(owner)
+  const applicationId = 'radix-bootleg'
+  const payload = JSON.stringify({
+    msg: 'SEND_TOKEN',
+    uri: tokenUri,
+    to: newFranchisor,
+  })
+  const transaction = RadixTransactionBuilder.createPayloadAtom(
+    serverIdentity.account,
+    [ownerAccount],
+    applicationId,
+    payload,
+    false,    
+  ).signAndSubmit(serverIdentity)
+  
+  return transaction.toPromise()
 }
 
 async function loadIdentity() {
