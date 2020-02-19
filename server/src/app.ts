@@ -6,7 +6,8 @@ import { radixUniverse,
   RadixIdentityManager,
   RadixKeyStore, 
   RadixTransactionBuilder, 
-  RadixAccount } from 'radixdlt';
+  RadixAccount, 
+  RadixTokenDefinition} from 'radixdlt';
 import models, { connectDb } from './models'
 import fs from 'fs-extra';
 import cors from 'cors';
@@ -25,11 +26,13 @@ const keyStorePsw = 'ServerPassword'
 const KeyStorePath = 'server-keystore.json'
 
 let serverIdentity: RadixIdentity
+let tokenDefinitions = new Map<string, RadixTokenDefinition>()
 
 radixUniverse.bootstrap(RadixUniverse.BETANET_EMULATOR)
 
 connectDb().then(() => {
   loadIdentity().then(() => {
+    loadTokenDefinitions()
     app.listen(port, (err: Error) => {
       if (err) {
         console.error('Error starting server ', err);          
@@ -52,6 +55,31 @@ app.get('/bootlegs', async (req, res) => {
     }
     res.send(bootlegs)
   })
+})
+
+app.post('/get-tokens', (req, res) => {
+  const address = req.body.address
+  const senderAccount = RadixAccount.fromAddress(address)
+
+  const symbol = 'BTLG'
+  const nativeTokenRef = new RRI(serverIdentity.address, symbol)
+
+  RadixTransactionBuilder
+    .createMintAtom(serverIdentity.account, nativeTokenRef, 10)
+    .addTransfer(serverIdentity.account, senderAccount, nativeTokenRef, 10)
+    .signAndSubmit(serverIdentity)
+    .subscribe({
+      next: status => console.log(status),
+      complete: () => { 
+        console.log('Native tokens sent to franchisor')
+        res.send('There is your initial amount of native tokens! RRI: ' + nativeTokenRef) 
+      },
+      error: error => {
+        console.log('Error sending native tokens to franchisor' + error)
+        res.status(400).send('Sorry, there was an error in sendin your native tokens')
+      }
+    })
+
 })
 
 app.post('/create-bootleg', (req, res) => {
@@ -206,4 +234,50 @@ async function generateIdentity() {
   const serverKeystore = await RadixKeyStore.encryptKey(serverIdentity.address, keyStorePsw)
   await fs.writeJSON(KeyStorePath, serverKeystore)
   console.log('Server identity created')
+}
+
+function loadTokenDefinitions() {
+  serverIdentity.account.tokenDefinitionSystem.tokenDefinitions
+    .values()
+    .map(td => tokenDefinitions.set(getTokenRRI(td), td))
+  
+  console.log(tokenDefinitions)
+
+  const symbol = 'BTLG'
+  const nativeTokenRef = `/${serverIdentity.account.getAddress()}/${symbol}`
+
+  if (!tokenDefinitions.has(nativeTokenRef)) {
+    console.log('Start creating token definition')
+    createTokenDefinition()
+  } else {
+    console.log('Native token definition already present');
+  }
+}
+
+function createTokenDefinition() {
+  const symbol = 'BTLG'
+  const name = 'Bootleg native coin'
+  const description = 'Native coin for bootleg application'
+  const granularity = 0.000000000000000001
+  const amount = 10
+  const iconUrl = 'http://a.b.com/icon.png'
+
+  new RadixTransactionBuilder().createTokenMultiIssuance(
+    serverIdentity.account,
+    name,
+    symbol,
+    description,
+    granularity,
+    amount,
+    iconUrl,
+  ).signAndSubmit(serverIdentity)
+  .subscribe({
+    next: status => console.log(status),
+    complete: () => { console.log('Token defintion has been created') },
+    error: error => console.log('Error creating native token definition ' + error)
+  })
+}
+
+function getTokenRRI(td: RadixTokenDefinition) {
+  return '/' + td.address + '/' + td.symbol;
 }

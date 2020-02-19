@@ -163,7 +163,7 @@ export default Vue.extend({
       const price: number = bootleg.price
       console.log('bootleg price ' + price.toString());
     
-      const symbol = 'BTL'
+      const symbol = 'BTLG'
       const tokenUri = `/${this.identity.account.address}/${symbol}`
       console.log('token uri ' + tokenUri)
 

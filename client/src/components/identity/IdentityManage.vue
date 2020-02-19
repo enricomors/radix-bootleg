@@ -140,29 +140,14 @@ export default Vue.extend({
       this.$store.commit('setIdentity', identity);
     },
     async getNativeTokens(myIdentity: RadixIdentity) {
-      const symbol = 'BTL'
-      const name = 'Bootleg native coin'
-      const description = 'Native coin for bootleg application'
-      const granularity = 0.000000000000000001
-      const amount = 10
-      const iconUrl = 'http://a.b.com/icon.png'
-
-      new RadixTransactionBuilder().createTokenSingleIssuance(
-        myIdentity.account,
-        name,
-        symbol,
-        description,
-        granularity,
-        amount,
-        iconUrl,
-      ).signAndSubmit(myIdentity)
-      .subscribe({
-        next: status => { this.showStatus(status) },
-        complete: () => {
-          const message = 'Token defintion has been created'
-          this.showStatus(message, NotificationType.SUCCESS)
-        },
-        error: error => { this.showStatus(error, NotificationType.ERROR) }
+      axios.post('http://localhost:3001/get-tokens', {
+        address: myIdentity.address.toString()
+      }).then((response) => {
+        if (response.status === 400) {
+          this.showStatus(response.data.message, NotificationType.ERROR)
+        } else {
+          this.showStatus(response.data.message, NotificationType.SUCCESS)
+        }
       })
     },
     confirmIdentityRandom() {
