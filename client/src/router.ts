@@ -52,11 +52,6 @@ export default new Router({
           name: 'Transactions',
           component: Transactions,
         },
-        {
-          path: 'send-tokens',
-          name: 'Send tokens',
-          component: Send,
-        },
       ],
       component: { render: c => c('router-view') },
     },
