@@ -3,8 +3,6 @@ import Router from 'vue-router';
 import Balance from '@/components/wallet/WalletBalance.vue';
 import Transactions from '@/components/wallet/WalletTransactions.vue';
 import Send from '@/components/wallet/WalletSendTokens.vue';
-import DataWrite from '@/components/data/DataWrite.vue';
-import DataRead from '@/components/data/DataRead.vue';
 import TokensCreate from '@/components/tokens/TokensCreate.vue';
 import TokensManage from '@/components/tokens/TokensManage.vue';
 import TokensLookup from '@/components/tokens/TokensLookup.vue';
@@ -58,23 +56,6 @@ export default new Router({
           path: 'send-tokens',
           name: 'Send tokens',
           component: Send,
-        },
-      ],
-      component: { render: c => c('router-view') },
-    },
-    {
-      path: '/data',
-      name: 'Data',
-      children: [
-        {
-          path: 'read',
-          name: 'Read',
-          component: DataRead,
-        },
-        {
-          path: 'write',
-          name: 'Write',
-          component: DataWrite,
         },
       ],
       component: { render: c => c('router-view') },
