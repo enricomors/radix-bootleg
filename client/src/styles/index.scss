@@ -1,0 +1,28 @@
+$family-sans-serif: "Open Sans", "Verdana", sans-serif;
+
+@import '~bulma/sass/utilities/all';
+
+$primary: #32364E;
+$primary-invert: findColorInvert($primary);
+$success: #24B47E;
+$success-invert: findColorInvert($success);
+
+$colors: (
+  "white": ($white, $black),
+  "black": ($black, $white),
+  "light": ($light, $light-invert),
+  "dark": ($dark, $dark-invert),
+  "primary": ($primary, $primary-invert),
+  "info": (lighten($primary, 25), $info-invert),
+  "success": ($success, $success-invert),
+  "warning": ($warning, $warning-invert),
+  "danger": ($danger, $danger-invert),
+);
+
+$link: $success;
+$link-invert: $success-invert;
+$link-focus-border: $success;
+
+@import '~bulma';
+@import '~buefy/src/scss/buefy';
+@import '~bulma-helpers/css/bulma-helpers.min.css';
