@@ -54,33 +54,51 @@ app.get('/bootlegs', async (req, res) => {
   })
 })
 
-app.post('/save-bootleg', async (req, res) => {
-
-  const tokenUri = req.body.uri
+app.post('/create-bootleg', (req, res) => {
+  const symbol = req.body.symbol
   const title = req.body.title
   const artist = req.body.artist
   const price = req.body.price
   const description = req.body.description
+  const granularity = req.body.granularity
+  const amount = req.body.amount
   const contentUrl = req.body.contentUrl
+  const iconUrl = req.body.iconUrl
   const bootlegger = req.body.bootlegger
 
-  try {
-    const bootleg = new models.Bootleg({
-      tokenUri,
-      title,
-      artist,
-      price,
-      description,
-      contentUrl,
-      bootlegger
-    })
-    await bootleg.save()
-    res.send(tokenUri)
-    console.log('Saved to db');
-  } catch (e) {
-    console.log(e);
-    res.status(400).send(e.message)
-  }
+  const tokenUri = new RRI(serverIdentity.address, symbol).toString()
+
+  new RadixTransactionBuilder().createTokenMultiIssuance(
+    serverIdentity.account,
+    title,
+    symbol,
+    description,
+    granularity,
+    amount,
+    iconUrl,
+  ).signAndSubmit(serverIdentity).subscribe({
+    next: status => console.log(status),
+    complete: async () => {
+      // create db entry
+      const bootleg = new models.Bootleg({
+        tokenUri,
+        title,
+        artist,
+        price,
+        description,
+        contentUrl,
+        bootlegger,
+      })
+      // save to db
+      await bootleg.save()
+      res.send(tokenUri)
+      console.log('Saved to db')
+    },
+    error: (e) => {
+      console.log('Error in token creation: ' + e)
+      res.status(400).send(e)
+    }
+  })
 })
 
 app.get('/request-address', (req, res) => {
@@ -97,8 +115,9 @@ app.post('/send-recipients', (req, res) => {
   const bootlegPrice: number = req.body.price
 
   sendPayment(franchisors, newFranchisor, artist, bootlegger, bootlegPrice)
-    .then(() => {
-      updateFranchisors(tokenUri, franchisors, newFranchisor, bootlegger)
+    .then(async () => {
+      await sendToken(tokenUri, newFranchisor)
+      await updateFranchisors(tokenUri, franchisors, newFranchisor, bootlegger)
       res.status(200).send({ message: 'Payment completed'})
     })
     .catch(error => {
@@ -135,7 +154,7 @@ async function pay(franchisorAccount: RadixAccount, tokenUri: string, amount: st
       amount
     ).signAndSubmit(serverIdentity)
 
-    return transaction.toPromise()
+  return transaction.toPromise()
 }
 
 async function updateFranchisors(_tokenUri: string, franchisors: [string], newFranchisor: string, bootlegger: string) {
@@ -145,6 +164,19 @@ async function updateFranchisors(_tokenUri: string, franchisors: [string], newFr
   )
   // console.log(franchisors)
   console.log('Updated franchisors list on database');
+}
+
+async function sendToken(tokenUri: string, recipient: string) {
+  const recipientAccount = RadixAccount.fromAddress(recipient)
+
+  RadixTransactionBuilder.createMintAtom(serverIdentity.account, tokenUri, 1)
+    .addTransfer(serverIdentity.account, recipientAccount, tokenUri, 1)
+    .signAndSubmit(serverIdentity)
+    .subscribe({
+      next: status => console.log(status),
+      complete: () => { console.log('Tokens sent to franchisor') },
+      error: error => console.log('Error sending token to franchisor' + error)
+    })
 }
 
 async function loadIdentity() {
