@@ -99,7 +99,7 @@ app.post('/send-recipients', (req, res) => {
   sendPayment(franchisors, newFranchisor, artist, bootlegger, bootlegPrice)
     .then(() => {
       updateFranchisors(tokenUri, franchisors, newFranchisor, bootlegger)
-      res.status(200).send()
+      res.status(200).send({ message: 'Payment completed'})
     })
     .catch(error => {
       console.error(error)
@@ -139,39 +139,12 @@ async function pay(franchisorAccount: RadixAccount, tokenUri: string, amount: st
 }
 
 async function updateFranchisors(_tokenUri: string, franchisors: [string], newFranchisor: string, bootlegger: string) {
-  if (franchisors.length > 0) {
-    await requestToken(_tokenUri, newFranchisor, franchisors[franchisors.length - 1])
-  } else {
-    await requestToken(_tokenUri, newFranchisor, bootlegger)
-  }
-  
   await models.Bootleg.updateOne(
     { tokenUri: _tokenUri },
     { $push: { franchisors: newFranchisor }}
   )
   // console.log(franchisors)
   console.log('Updated franchisors list on database');
-}
-
-function requestToken(tokenUri: string, newFranchisor: string, owner: string): Promise<string> {
-  console.log('Creating paylod for token request');
-  
-  const ownerAccount = RadixAccount.fromAddress(owner)
-  const applicationId = 'radix-bootleg'
-  const payload = JSON.stringify({
-    msg: 'SEND_TOKEN',
-    uri: tokenUri,
-    to: newFranchisor,
-  })
-  const transaction = RadixTransactionBuilder.createPayloadAtom(
-    serverIdentity.account,
-    [ownerAccount],
-    applicationId,
-    payload,
-    false,    
-  ).signAndSubmit(serverIdentity)
-  
-  return transaction.toPromise()
 }
 
 async function loadIdentity() {
