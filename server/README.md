@@ -1,4 +1,4 @@
-This simple server is based on [typescript-express-boilerplate](https://github.com/texzhichen/typescript-express-boilerplate), a boilerplate that uses TypeScript 2.9, Express 4, and Webpack 4.
+Il server contiene uno script principale [app.ts](https://github.com/enricomors/radix-bootleg/blob/master/server/src/app.ts) e i file per il salvataggio dei dati sul database mongodb. Si basa sul template [typescript-express-boilerplate](https://github.com/texzhichen/typescript-express-boilerplate), che utilizza TypeScript 2.9, Express 4, and Webpack 4.
 
 - For development, it uses `nodemon` to monitor source file changes.
 - For production, it uses `webpack` to bundle source files.
