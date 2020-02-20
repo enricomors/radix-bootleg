@@ -190,7 +190,7 @@ export default Vue.extend({
       // console.log('funds in number ' + fundsInNumber.toNumber());
       // console.log(fundsInNumber.toNumber() >= price)
 
-      if (fundsInNumber.toNumber() >= price) {
+      if (fundsInNumber.greaterThanOrEqualTo(price)) {
          // send payment to server
          axios.get('http://localhost:3001/request-address')
           .then((resp) => { 
@@ -198,14 +198,12 @@ export default Vue.extend({
             console.log('Received server address' + resp.data.address)
             const serverAccount = RadixAccount.fromAddress(serverAddress)
 
-            const status = RadixTransactionBuilder.createTransferAtom(
+            RadixTransactionBuilder.createTransferAtom(
               this.identity.account,
               serverAccount,
               tokenUri,
-              price
-            ).signAndSubmit(this.identity)
-
-            status.subscribe({
+              price,
+            ).signAndSubmit(this.identity).subscribe({
               next: status => this.showStatus(status),
               complete: () => { 
                 this.sendRecipients(bootlegToken, artist, bootlegger, franchisors, price) 
