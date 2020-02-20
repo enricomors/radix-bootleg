@@ -190,7 +190,7 @@ export default Vue.extend({
       // console.log('funds in number ' + fundsInNumber.toNumber());
       // console.log(fundsInNumber.toNumber() >= price)
 
-      if (fundsInNumber.greaterThanOrEqualTo(price)) {
+      if (fundsInNumber.toNumber() >= price) {
          // send payment to server
          axios.get('http://localhost:3001/request-address')
           .then((resp) => { 
