@@ -7,7 +7,8 @@ import { radixUniverse,
   RadixKeyStore, 
   RadixTransactionBuilder, 
   RadixAccount, 
-  RadixTokenDefinition} from 'radixdlt';
+  RadixTokenDefinition,
+  radixTokenManager} from 'radixdlt';
 import models, { connectDb } from './models'
 import fs from 'fs-extra';
 import cors from 'cors';
@@ -26,13 +27,13 @@ const keyStorePsw = 'ServerPassword'
 const KeyStorePath = 'server-keystore.json'
 
 let serverIdentity: RadixIdentity
-let tokenDefinitions = new Map<string, RadixTokenDefinition>()
 
 radixUniverse.bootstrap(RadixUniverse.BETANET_EMULATOR)
 
 connectDb().then(() => {
-  loadIdentity().then(() => {
-    loadTokenDefinitions()
+  loadIdentity().then(async () => {
+    nativeTokenManage()
+
     app.listen(port, (err: Error) => {
       if (err) {
         console.error('Error starting server ', err);          
@@ -236,25 +237,23 @@ async function generateIdentity() {
   console.log('Server identity created')
 }
 
-function loadTokenDefinitions() {
-  serverIdentity.account.tokenDefinitionSystem.tokenDefinitions
-    .values()
-    .map(td => tokenDefinitions.set(getTokenRRI(td), td))
-  
-  console.log(tokenDefinitions)
+async function nativeTokenManage() {
+  let td: RadixTokenDefinition = await searchTokenDefinition()
 
-  const symbol = 'BTLG'
-  const nativeTokenRef = `/${serverIdentity.account.getAddress()}/${symbol}`
-
-  if (!tokenDefinitions.has(nativeTokenRef)) {
-    console.log('Start creating token definition')
-    createTokenDefinition()
+  if (td) {
+    console.log('Found native token definition')
   } else {
-    console.log('Native token definition already present');
+    console.log('Start creating token definition')
+    await createTokenDefinition()
   }
 }
 
-function createTokenDefinition() {
+async function searchTokenDefinition(): Promise<RadixTokenDefinition> {
+  const symbol = 'BTLG'
+  return serverIdentity.account.tokenDefinitionSystem.getTokenDefinition(symbol)
+}
+
+async function createTokenDefinition() {
   const symbol = 'BTLG'
   const name = 'Bootleg native coin'
   const description = 'Native coin for bootleg application'
@@ -274,7 +273,15 @@ function createTokenDefinition() {
   .subscribe({
     next: status => console.log(status),
     complete: () => { console.log('Token defintion has been created') },
-    error: error => console.log('Error creating native token definition ' + error)
+    error: error => {
+      console.log('Error creating native token definition: ' + error)
+      const td: RadixTokenDefinition = serverIdentity.account.tokenDefinitionSystem.getTokenDefinition(symbol)
+      
+      if (td) {
+        console.log('Native token definition is already present')
+        console.log(td)
+      }
+    }
   })
 }
 
