@@ -8,7 +8,10 @@ import { radixUniverse,
   RadixTransactionBuilder, 
   RadixAccount, 
   RadixTokenDefinition,
-  radixTokenManager} from 'radixdlt';
+  radixTokenManager,
+  RadixSerializer,
+  RadixAtom,
+  RadixMessageParticle} from 'radixdlt';
 import models, { connectDb } from './models'
 import fs from 'fs-extra';
 import cors from 'cors';
@@ -147,7 +150,7 @@ app.post('/send-recipients', (req, res) => {
   sendPayment(franchisors, newFranchisor, artist, bootlegger, bootlegPrice)
     .then(async () => {
       await sendToken(tokenUri, newFranchisor)
-      await updateFranchisors(tokenUri, franchisors, newFranchisor, bootlegger)
+      await updateFranchisors(tokenUri, newFranchisor)
       res.status(200).send({ message: 'Payment completed'})
     })
     .catch(error => {
@@ -157,8 +160,95 @@ app.post('/send-recipients', (req, res) => {
 })
 
 app.get('/request-access', async (req, res) => {
-  
+  const id = uuidv4()
+  const request = new models.AccessRequest({
+    id,
+    consumed: false,
+  })
+
+  await request.save()
+  res.send(id)
 })
+
+app.post('/bootleg', async (req, res) => {
+  try {
+    console.log('Requesting access to bootleg')
+    const serializedAtom = req.body.atom
+
+    const bootlegTokenUri = req.body.bootlegTokenUri
+
+    const atom = RadixSerializer.fromJSON(serializedAtom) as RadixAtom
+    const particle = atom.getFirstParticleOfType(RadixMessageParticle)
+    const from = particle.from
+    const challenge = particle.getData()
+    console.log('challenge: ' + challenge)
+    
+    // check signature
+    if (!from.verify(atom.getHash(), atom.signatures[from.getUID().toString()])) {
+      res.status(400).send('Signature verification failed')
+      throw new Error('Signature verification failed')
+    }
+
+    console.log('Signature ok')
+
+    // check challenge
+    const document = await models.AccessRequest.findOne({id: challenge }).exec()
+    if (!document || document.get('consumed')) {
+      res.status(400).send('Invalid challenge')
+      throw new Error('Invalid challenge')
+    }
+
+    console.log('Challenge ok')
+    
+    document.set('consumed', true)
+    await document.save()
+      
+    // check ownership
+    const account = await getAccount(from.toString())
+    console.log('Got synced account')
+    const balance = account.transferSystem.balance
+    console.log(balance)
+    
+    if (!(bootlegTokenUri in balance) || balance[bootlegTokenUri].ltn(1)) {
+      res.status(400).send(`Don't own the bootleg`)
+      throw new Error(`Don't own the bootleg`)
+    }
+    
+    console.log('Bootleg owned')
+
+    const bootleg = await models.Bootleg.findOne({
+      tokenUri: bootlegTokenUri
+    }).exec()
+
+    if (!bootleg) {
+      res.status(400).send(`Bootleg don't exist`)
+      throw new Error(`Bootleg don't exist`) 
+    }
+
+    console.log('Bootleg found in database')
+    res.send(bootleg)
+
+  } catch (error) {
+    console.error('Unexpected error: ', error)
+    res.status(400).send('Unexpected error' + error)
+  }
+})
+
+async function getAccount(address: string) {
+  let account: RadixAccount
+  account = RadixAccount.fromAddress(address)
+  await account.openNodeConnection()
+
+  await account.isSynced()
+    .filter(val => {
+      console.log('synced', val)
+      return val
+    })
+    .take(1)
+    .toPromise()
+
+  return account
+}
 
 async function sendPayment(franchisors: [string], newFranchisor: string, artist: string, bootlegger: string, price: number) {
   
@@ -191,7 +281,7 @@ async function pay(franchisorAccount: RadixAccount, tokenUri: string, amount: st
   return transaction.toPromise()
 }
 
-async function updateFranchisors(_tokenUri: string, franchisors: [string], newFranchisor: string, bootlegger: string) {
+async function updateFranchisors(_tokenUri: string, newFranchisor: string) {
   await models.Bootleg.updateOne(
     { tokenUri: _tokenUri },
     { $push: { franchisors: newFranchisor }}
@@ -284,7 +374,6 @@ async function createTokenDefinition() {
       
       if (td) {
         console.log('Native token definition is already present')
-        console.log(td)
       }
     }
   })

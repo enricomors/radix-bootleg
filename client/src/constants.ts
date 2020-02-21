@@ -3,4 +3,4 @@ export const NotificationType = Object.freeze({
   ERROR: 'is-danger',
   WARNING: 'is-warning',
   DEFAULT: 'is-light',
-});
+})
