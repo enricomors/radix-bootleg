@@ -144,9 +144,9 @@ export default Vue.extend({
         address: myIdentity.address.toString()
       }).then((response) => {
         if (response.status === 400) {
-          this.showStatus(response.data.message, NotificationType.ERROR)
+          this.showStatus('Error getting native tokens' || response.data.message, NotificationType.ERROR)
         } else {
-          this.showStatus(response.data.message, NotificationType.SUCCESS)
+          this.showStatus('Native tokens fetched' || response.data.message, NotificationType.SUCCESS)
         }
       })
     },

@@ -128,10 +128,11 @@ export default Vue.extend({
         iconUrl: defaultIconURL,
         bootlegger: bootlegger.toString() 
       }).then(response => {
-        console.log('Bootleg created and to database');
+        this.showStatus('Bootleg created', NotificationType.SUCCESS)
         console.log('Token uri: ', response);
       }).catch(error => {
-        console.error('Error saving bootleg to db ', error);
+        console.error('Error saving bootleg to db', error)
+        this.showStatus(error || error.message, NotificationType.ERROR)
       })
     },
     validateAmount(): boolean {

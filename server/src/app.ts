@@ -63,8 +63,10 @@ app.post('/get-tokens', (req, res) => {
   const senderAccount = RadixAccount.fromAddress(address)
 
   const symbol = 'BTLG'
-  const nativeTokenRef = new RRI(serverIdentity.address, symbol)
+  const nativeTokenRef = `/${serverIdentity.address.getAddress()}/${symbol}`
 
+  console.log('Native token reference: ' + nativeTokenRef);
+  
   RadixTransactionBuilder
     .createMintAtom(serverIdentity.account, nativeTokenRef, 10)
     .addTransfer(serverIdentity.account, senderAccount, nativeTokenRef, 10)
@@ -167,7 +169,7 @@ async function sendPayment(franchisors: [string], newFranchisor: string, artist:
     const franchisor = franchisors[i]
     
     const franchisorAccount = RadixAccount.fromAddress(franchisor)
-    const tokenUri = `/${newFranchisor}/BTL`
+    const tokenUri = `/${serverIdentity.address.getAddress()}/BTLG`
 
     await pay(franchisorAccount, tokenUri, dividedPrice)
   }

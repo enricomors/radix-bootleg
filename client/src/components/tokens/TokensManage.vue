@@ -164,8 +164,6 @@ export default Vue.extend({
       console.log('bootleg price ' + price.toString());
     
       const symbol = 'BTLG'
-      const tokenUri = `/${this.identity.account.address}/${symbol}`
-      console.log('token uri ' + tokenUri)
 
       const bootlegger = bootleg.bootlegger
       console.log('bootlegger ' + bootlegger);
@@ -196,12 +194,14 @@ export default Vue.extend({
           .then((resp) => { 
             const serverAddress = resp.data.address
             console.log('Received server address' + resp.data.address)
+            const nativeTokenRef = `/${serverAddress}/${symbol}`
             const serverAccount = RadixAccount.fromAddress(serverAddress)
 
+            // tokenURI for the native token must have the address of the server account, because its created by it
             RadixTransactionBuilder.createTransferAtom(
               this.identity.account,
               serverAccount,
-              tokenUri,
+              nativeTokenRef,
               price,
             ).signAndSubmit(this.identity).subscribe({
               next: status => this.showStatus(status),
