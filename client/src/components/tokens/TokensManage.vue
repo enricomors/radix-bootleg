@@ -26,22 +26,22 @@
         </b-table-column>
         <b-table-column label="Actions">
           <div class="buttons">
-            <b-button
+            <router-link 
               v-if="tokenDefinitions.has(props.row.tokenUri)"
+              :to="{name: 'Bootleg', params: {id: props.row.tokenUri}}">
+              <b-button
               type="is-info"
               class="has-padding-right-30 has-padding-left-30"
-              icon-left="leaf"
-              @click="watch()"
-            >
-              Watch
-            </b-button>
+              icon-left="leaf">
+                Watch
+              </b-button>
+            </router-link>
             <b-button
               v-else
               type="is-success"
               class="has-padding-right-30 has-padding-left-30"
               icon-left="fire"
-              @click="confirmBootlegPurchase(props.row)"
-            >
+              @click="confirmBootlegPurchase(props.row)">
               Buy
             </b-button>
           </div>
@@ -227,9 +227,6 @@ export default Vue.extend({
           console.log('Completed successfully')
         }
       })
-    },
-    watch() {
-
     },
     openModal(tokenReference: string, action: string) {
       this.$buefy.modal.open({

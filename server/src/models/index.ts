@@ -1,6 +1,7 @@
 import mongoose from 'mongoose'
 // import * as dotenv from 'dotenv'
 import Bootleg from './bootleg'
+import AccessRequest from './accessRequest'
 
 /*
 const path = `${__dirname}/../../.env`
@@ -14,7 +15,7 @@ const connectDb = () => {
     return mongoose.connect(dbUrl, { useNewUrlParser: true })
 }
 
-const models = { Bootleg }
+const models = { Bootleg, AccessRequest }
 
 export { connectDb }
 

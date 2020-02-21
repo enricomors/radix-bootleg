@@ -2,7 +2,7 @@ import Vue from 'vue';
 import Router from 'vue-router';
 import Balance from '@/components/wallet/WalletBalance.vue';
 import Transactions from '@/components/wallet/WalletTransactions.vue';
-import Send from '@/components/wallet/WalletSendTokens.vue';
+import Bootleg from '@/components/bootleg/Bootleg.vue'
 import TokensCreate from '@/components/tokens/TokensCreate.vue';
 import TokensManage from '@/components/tokens/TokensManage.vue';
 import TokensLookup from '@/components/tokens/TokensLookup.vue';
@@ -62,6 +62,11 @@ export default new Router({
       // this generates a separate chunk (about.[hash].js) for this route
       // which is lazy-loaded when the route is visited.
       component: () => import(/* webpackChunkName: "about" */ '@/components/about/About.vue'),
+    },
+    {
+      path: '/bootleg/:id',
+      name: 'Bootleg',
+      component: Bootleg,
     },
   ],
 });

@@ -13,8 +13,7 @@ import models, { connectDb } from './models'
 import fs from 'fs-extra';
 import cors from 'cors';
 import bodyParser from 'body-parser';
-import { stat } from 'fs';
-import { error } from 'util';
+import uuidv4 from 'uuid'
 
 const app: express.Application = express()
 const port: number = Number(process.env.PORT) || 3001
@@ -155,6 +154,10 @@ app.post('/send-recipients', (req, res) => {
       console.error(error)
       res.status(400).send({ message: error.message})
     })
+})
+
+app.get('/request-access', async (req, res) => {
+  
 })
 
 async function sendPayment(franchisors: [string], newFranchisor: string, artist: string, bootlegger: string, price: number) {
