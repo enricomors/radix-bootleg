@@ -21,6 +21,6 @@ yarn-error.log*
 *.sw?
 
 #keystore
-bootlegger-keystore.json
-artist-keystore.json
-franchisor-keystore.json
+keystore-bootlegger.json
+keystore-artist.json
+keystore-franchisor.json

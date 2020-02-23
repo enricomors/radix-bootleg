@@ -11,7 +11,8 @@ import { radixUniverse,
   radixTokenManager,
   RadixSerializer,
   RadixAtom,
-  RadixMessageParticle} from 'radixdlt';
+  RadixMessageParticle,
+  RadixLogger} from 'radixdlt';
 import models, { connectDb } from './models'
 import fs from 'fs-extra';
 import cors from 'cors';
@@ -30,11 +31,12 @@ const KeyStorePath = 'server-keystore.json'
 
 let serverIdentity: RadixIdentity
 
-radixUniverse.bootstrap(RadixUniverse.BETANET_EMULATOR)
+radixUniverse.bootstrap(RadixUniverse.LOCALHOST_SINGLENODE)
 
 connectDb().then(() => {
   loadIdentity().then(async () => {
     nativeTokenManage()
+    RadixLogger.setLevel('DEBUG')
 
     app.listen(port, (err: Error) => {
       if (err) {
@@ -71,20 +73,25 @@ app.post('/get-tokens', (req, res) => {
   
   RadixTransactionBuilder
     .createMintAtom(serverIdentity.account, nativeTokenRef, 10)
-    .addTransfer(serverIdentity.account, senderAccount, nativeTokenRef, 10)
     .signAndSubmit(serverIdentity)
     .subscribe({
       next: status => console.log(status),
-      complete: () => { 
-        console.log('Native tokens sent to franchisor')
-        res.send('There is your initial amount of native tokens! RRI: ' + nativeTokenRef) 
-      },
-      error: error => {
-        console.log('Error sending native tokens to franchisor' + error)
-        res.status(400).send('Sorry, there was an error in sendin your native tokens')
+      complete: () => {
+        RadixTransactionBuilder.createTransferAtom(serverIdentity.account, senderAccount, nativeTokenRef, 10)
+          .signAndSubmit(serverIdentity)
+          .subscribe({
+            next: status => console.log(status),
+            complete: () => { 
+              console.log('Native tokens sent to franchisor')
+              res.send('There is your initial amount of native tokens! RRI: ' + nativeTokenRef) 
+            },
+            error: error => {
+              console.log('Error sending native tokens to franchisor' + error)
+              res.status(400).send('Sorry, there was an error in sendin your native tokens')
+            }
+          })
       }
     })
-
 })
 
 app.post('/create-bootleg', (req, res) => {
@@ -294,12 +301,18 @@ async function sendToken(tokenUri: string, recipient: string) {
   const recipientAccount = RadixAccount.fromAddress(recipient)
 
   RadixTransactionBuilder.createMintAtom(serverIdentity.account, tokenUri, 1)
-    .addTransfer(serverIdentity.account, recipientAccount, tokenUri, 1)
     .signAndSubmit(serverIdentity)
     .subscribe({
       next: status => console.log(status),
-      complete: () => { console.log('Tokens sent to franchisor') },
-      error: error => console.log('Error sending token to franchisor' + error)
+      complete: () => {
+        RadixTransactionBuilder.createTransferAtom(serverIdentity.account, recipientAccount, tokenUri, 1)
+          .signAndSubmit(serverIdentity)
+          .subscribe({
+            next: status => console.log(status),
+            complete: () => { console.log('Tokens sent to franchisor') },
+            error: error => console.log('Error sending token to franchisor' + error)
+          })
+      }
     })
 }
 
@@ -315,7 +328,8 @@ async function loadIdentity() {
     serverIdentity = identityManager.addSimpleIdentity(serverAddress)
     await serverIdentity.account.openNodeConnection()
 
-    console.log('Server identity loaded');
+    console.log('Server identity loaded')
+
   } else {
     generateIdentity().catch(error => {
       console.error('Error generating identities ', error)
@@ -363,7 +377,7 @@ async function createTokenDefinition() {
     description,
     granularity,
     amount,
-    iconUrl,
+    iconUrl,  
   ).signAndSubmit(serverIdentity)
   .subscribe({
     next: status => console.log(status),
@@ -371,9 +385,20 @@ async function createTokenDefinition() {
     error: error => {
       console.log('Error creating native token definition: ' + error)
       const td: RadixTokenDefinition = serverIdentity.account.tokenDefinitionSystem.getTokenDefinition(symbol)
-      
+      // 9hkzbMWgUKVmyYifqPXCCBsa2tUVpp4hmgbWXQj7wp3fv8Pbp2x
+      // 9hvU17sRJBt73q5pr3s2fudcGwLGdPzaVBQPvg3piK18yBgoQyn
       if (td) {
         console.log('Native token definition is already present')
+        // mint some
+        console.log('Mint some tokens')
+        const tokenRef = `/${serverIdentity.address.getAddress()}/BTLG`
+        RadixTransactionBuilder.createMintAtom(serverIdentity.account, tokenRef, 10)
+          .signAndSubmit(serverIdentity)
+          .subscribe({
+            next: status => console.log(status),
+            complete: () => { console.log('Minting completed') },
+            error: error => console.log('Error minting tokens: ', error)
+          })
       }
     }
   })

@@ -27,7 +27,7 @@
         <b-table-column label="Actions">
           <div class="buttons">
             <router-link 
-              v-if="tokenDefinitions.has(props.row.tokenUri)"
+              v-if="tokenBalance[props.row.tokenUri]"
               :to="{name: 'Bootleg', params: {id: props.row.tokenUri}}">
               <b-button
               type="is-info"
@@ -101,6 +101,7 @@ export default Vue.extend({
     return {
       bootlegs: [],
       pageSize: 10,
+      tokenBalance: {},
       tokenDefinitions: new Map<string, RadixTokenDefinition>(),
       tokenUpdatesSubscription: Subscription.EMPTY as Subscription,
       tokenRequestSubscription: Subscription.EMPTY as Subscription,
@@ -136,9 +137,10 @@ export default Vue.extend({
   },
   methods: {
     loadTokenDefinitions() {
-      this.identity.account.tokenDefinitionSystem.tokenDefinitions
-        .values()
-        .map(td => this.tokenDefinitions.set(this.getTokenRRI(td), td));
+      this.tokenBalance = this.identity.account.transferSystem.tokenUnitsBalance
+
+        //.values()
+        //.map(td => this.tokenDefinitions.set(this.getTokenRRI(td), td));
     },
     subscribeToUpdates() {
       this.tokenUpdatesSubscription = this.identity.account.tokenDefinitionSystem
@@ -177,26 +179,23 @@ export default Vue.extend({
       const bootlegToken = bootleg.tokenUri
       
       // the user which is buyng the bootleg
-      const newFranchisor = this.identity.account
+      const newFranchisor: RadixAccount = this.identity.account
 
-      const funds = newFranchisor
-        .tokenDefinitionSystem
-        .getTokenDefinition(symbol)
-        .totalSupply
+      axios.get('http://localhost:3001/request-address')
+        .then((resp) => { 
+          const serverAddress = resp.data.address
+          console.log('Received server address' + resp.data.address)
+          const nativeTokenRef = `/${serverAddress}/${symbol}`
+          const serverAccount = RadixAccount.fromAddress(serverAddress)
 
-      const fundsInNumber = RadixTokenDefinition.fromSubunitsToDecimal(funds)
-      // console.log('funds in number ' + fundsInNumber.toNumber());
-      // console.log(fundsInNumber.toNumber() >= price)
+          const funds = newFranchisor
+            .transferSystem
+            .tokenUnitsBalance[nativeTokenRef]
+          console.log('Funds: ', funds)
+          
 
-      if (fundsInNumber.toNumber() >= price) {
-         // send payment to server
-         axios.get('http://localhost:3001/request-address')
-          .then((resp) => { 
-            const serverAddress = resp.data.address
-            console.log('Received server address' + resp.data.address)
-            const nativeTokenRef = `/${serverAddress}/${symbol}`
-            const serverAccount = RadixAccount.fromAddress(serverAddress)
-
+          if (funds.toNumber() >= price) {
+            // send payment to server
             // tokenURI for the native token must have the address of the server account, because its created by it
             RadixTransactionBuilder.createTransferAtom(
               this.identity.account,
@@ -210,10 +209,10 @@ export default Vue.extend({
               },
               error: error => this.showStatus(error, NotificationType.ERROR)
             })
-          }).catch(err => console.error(err))
-      } else {
-        throw new Error("Insufficent funds")
-      }
+          } else {
+            throw new Error("Insufficent funds")
+          }
+      }).catch(err => console.error(err))
     },
     sendRecipients(tokenUri: string, artist: string, bootlegger: string, franchisors: [], price: number) {
       const newFranchisor = this.identity.address.toString()
