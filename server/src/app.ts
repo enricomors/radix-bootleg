@@ -62,6 +62,9 @@ app.get('/bootlegs', async (req, res) => {
   })
 })
 
+/**
+ * Mint an amount of native Tokens and sent it to the user
+ */
 app.post('/get-tokens', (req, res) => {
   const address = req.body.address
   const senderAccount = RadixAccount.fromAddress(address)
@@ -94,6 +97,10 @@ app.post('/get-tokens', (req, res) => {
     })
 })
 
+/**
+ * Creates a new token for a bootleg, save it to database and send the uri
+ * to the bootlegger
+ */
 app.post('/create-bootleg', (req, res) => {
   const symbol = req.body.symbol
   const title = req.body.title
@@ -141,11 +148,18 @@ app.post('/create-bootleg', (req, res) => {
   })
 })
 
+/**
+ * Send the address of the server account to the user
+ */
 app.get('/request-address', (req, res) => {
   const serverAddress = serverIdentity.address
   res.send({ address: serverAddress.toString() })
 })
 
+/**
+ * Split the payment of the bootleg between artist, bootlegger and
+ * franchisors (if present)
+ */
 app.post('/send-recipients', (req, res) => {
   const tokenUri: string = req.body.tokenUri
   const artist: string = req.body.artist
@@ -166,6 +180,9 @@ app.post('/send-recipients', (req, res) => {
     })
 })
 
+/**
+ * Generates a challenge for the user who wants to access a bootleg
+ */
 app.get('/request-access', async (req, res) => {
   const id = uuidv4()
   const request = new models.AccessRequest({
@@ -177,6 +194,9 @@ app.get('/request-access', async (req, res) => {
   res.send(id)
 })
 
+/**
+ * Sends the contentUrl of the bootleg to the user
+ */
 app.post('/bootleg', async (req, res) => {
   try {
     console.log('Requesting access to bootleg')
@@ -216,6 +236,7 @@ app.post('/bootleg', async (req, res) => {
     const balance = account.transferSystem.balance
     console.log(balance)
     
+    // if account doesn't own bootleg doken
     if (!(bootlegTokenUri in balance) || balance[bootlegTokenUri].ltn(1)) {
       res.status(400).send(`Don't own the bootleg`)
       throw new Error(`Don't own the bootleg`)
@@ -223,6 +244,7 @@ app.post('/bootleg', async (req, res) => {
     
     console.log('Bootleg owned')
 
+    // search the database for the bootleg
     const bootleg = await models.Bootleg.findOne({
       tokenUri: bootlegTokenUri
     }).exec()
@@ -241,6 +263,10 @@ app.post('/bootleg', async (req, res) => {
   }
 })
 
+/**
+ * Get an account to check its token balance
+ * @param address address of the account
+ */
 async function getAccount(address: string) {
   let account: RadixAccount
   account = RadixAccount.fromAddress(address)
@@ -257,6 +283,14 @@ async function getAccount(address: string) {
   return account
 }
 
+/**
+ * Send multiple payments whith BTLG token, using the pay() function
+ * @param franchisors list of franchisors
+ * @param newFranchisor new franchisor to be added in the list
+ * @param artist artist of the bootleg
+ * @param bootlegger creator of the bootleg
+ * @param price price of the bootleg
+ */
 async function sendPayment(franchisors: [string], newFranchisor: string, artist: string, bootlegger: string, price: number) {
   
   franchisors.push(bootlegger)
@@ -275,6 +309,12 @@ async function sendPayment(franchisors: [string], newFranchisor: string, artist:
   }
 }
 
+/**
+ * Send a specified amount of a certain token to another account
+ * @param franchisorAccount account of the franchisor
+ * @param tokenUri uri of the native token
+ * @param amount amount of native token
+ */
 async function pay(franchisorAccount: RadixAccount, tokenUri: string, amount: string): Promise<string> {
   const serverAccount = serverIdentity.account
   const transaction = RadixTransactionBuilder
@@ -288,6 +328,11 @@ async function pay(franchisorAccount: RadixAccount, tokenUri: string, amount: st
   return transaction.toPromise()
 }
 
+/**
+ * Update the list of the franchisors for the bootleg on database
+ * @param _tokenUri uri of the bootleg token
+ * @param newFranchisor franchisor who just purchased the bootleg
+ */
 async function updateFranchisors(_tokenUri: string, newFranchisor: string) {
   await models.Bootleg.updateOne(
     { tokenUri: _tokenUri },
@@ -297,6 +342,10 @@ async function updateFranchisors(_tokenUri: string, newFranchisor: string) {
   console.log('Updated franchisors list on database');
 }
 
+/**
+ * @param tokenUri uri of the token
+ * @param recipient recipient for the token
+ */
 async function sendToken(tokenUri: string, recipient: string) {
   const recipientAccount = RadixAccount.fromAddress(recipient)
 
@@ -316,12 +365,11 @@ async function sendToken(tokenUri: string, recipient: string) {
     })
 }
 
+/**
+ * Load a pre-created identity for the server
+ */
 async function loadIdentity() {
 
-  /* Can use this only on client side
-  const artistKeyStore = localStorage.getItem('artist')
-  const bootleggerKeyStore = localStorage.getItem('bootlegger')
-  */
   if (fs.existsSync(KeyStorePath)) {
     const serverKeystore = await fs.readJSON(KeyStorePath)
     const serverAddress = await RadixKeyStore.decryptKey(serverKeystore, keyStorePsw)
@@ -337,6 +385,9 @@ async function loadIdentity() {
   }
 }
 
+/**
+ * If not present, generate a new server identity
+ */
 async function generateIdentity() {
   // artist
   serverIdentity = identityManager.generateSimpleIdentity()
@@ -357,11 +408,17 @@ async function nativeTokenManage() {
   }
 }
 
+/**
+ * Search for native token definition in the account (not working)
+ */
 async function searchTokenDefinition(): Promise<RadixTokenDefinition> {
   const symbol = 'BTLG'
   return serverIdentity.account.tokenDefinitionSystem.getTokenDefinition(symbol)
 }
 
+/**
+ * Creates the native bootleg token (BTLG) definition
+ */
 async function createTokenDefinition() {
   const symbol = 'BTLG'
   const name = 'Bootleg native coin'
@@ -385,8 +442,7 @@ async function createTokenDefinition() {
     error: error => {
       console.log('Error creating native token definition: ' + error)
       const td: RadixTokenDefinition = serverIdentity.account.tokenDefinitionSystem.getTokenDefinition(symbol)
-      // 9hkzbMWgUKVmyYifqPXCCBsa2tUVpp4hmgbWXQj7wp3fv8Pbp2x
-      // 9hvU17sRJBt73q5pr3s2fudcGwLGdPzaVBQPvg3piK18yBgoQyn
+
       if (td) {
         console.log('Native token definition is already present')
         // mint some
