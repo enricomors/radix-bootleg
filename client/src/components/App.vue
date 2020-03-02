@@ -23,7 +23,7 @@
 <script lang="ts">
 import Vue from 'vue';
 import { radixUniverse, RadixUniverse } from 'radixdlt';
-import { NotificationType } from '@/constants';
+import { NotificationType } from '../constants';
 
 import AppSidebar from '@/components/AppSidebar.vue';
 import AppHeader from '@/components/AppHeader.vue';

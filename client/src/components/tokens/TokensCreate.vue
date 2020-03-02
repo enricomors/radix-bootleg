@@ -56,7 +56,7 @@
 <script lang="ts">
 import { RadixTransactionBuilder, RadixIdentity, RRI } from 'radixdlt';
 import Vue from 'vue';
-import { NotificationType } from '@/constants';
+import { NotificationType } from '../../constants';
 import { Decimal } from 'decimal.js';
 
 import axios from 'axios';

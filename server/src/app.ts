@@ -74,6 +74,7 @@ app.post('/get-tokens', (req, res) => {
 
   console.log('Native token reference: ' + nativeTokenRef);
   
+  // mint some BTLG tokens and send them to client
   RadixTransactionBuilder
     .createMintAtom(serverIdentity.account, nativeTokenRef, 10)
     .signAndSubmit(serverIdentity)
@@ -115,6 +116,7 @@ app.post('/create-bootleg', (req, res) => {
 
   const tokenUri = new RRI(serverIdentity.address, symbol).toString()
 
+  // create multi issuance token for the bootleg
   new RadixTransactionBuilder().createTokenMultiIssuance(
     serverIdentity.account,
     title,
@@ -458,8 +460,4 @@ async function createTokenDefinition() {
       }
     }
   })
-}
-
-function getTokenRRI(td: RadixTokenDefinition) {
-  return '/' + td.address + '/' + td.symbol;
 }

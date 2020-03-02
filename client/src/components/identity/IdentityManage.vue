@@ -72,7 +72,7 @@
 import Vue from 'vue';
 import { mapState } from 'vuex';
 import { RadixIdentityManager, RadixKeyStore, RadixRemoteIdentity, RadixIdentity, RadixTransactionBuilder, radixUniverse, RadixAccount } from 'radixdlt';
-import { NotificationType } from '@/constants';
+import { NotificationType } from '../../constants';
 
 import axios from 'axios';
 
@@ -128,8 +128,8 @@ export default Vue.extend({
       const port = '54345';
 
       const identity = await this.identityManager.generateRemoteIdentity(
-        'JS LIB SHOWCASE',
-        'Radix DLT JS Library showcase',
+        'RADIX BOOTLEG',
+        'Radix applications to purchase and watch bootlegs',
         permissions,
         host,
         port,

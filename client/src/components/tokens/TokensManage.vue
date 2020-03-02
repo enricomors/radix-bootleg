@@ -86,7 +86,7 @@ import { Subscription } from 'rxjs';
 import Decimal from 'decimal.js';
 import BN from 'bn.js'
 import TokensManageActionModal from '@/components/tokens/TokensManageModal.vue';
-import { NotificationType } from '@/constants';
+import { NotificationType } from '../../constants';
 import TableEmpty from '@/components/shared/TableEmpty.vue';
 
 import axios from 'axios';
